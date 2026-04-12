@@ -6,7 +6,6 @@
 }
 
 body {
-    /* MENGGUNAKAN RELATIVE PATH (naik satu folder, lalu masuk ke folder img) */
     background: url('awan.jpg') no-repeat center center fixed; 
     background-size: cover;
     display: flex;
@@ -16,17 +15,15 @@ body {
     color: #f4f7f6;
     overflow: hidden;
 }
-/* =========================================
-   Container Glassmorphism (Kotak Kaca)
-   ========================================= */
+/* Kotak Kaca) */
 .container {
-    background-color: rgba(20, 20, 35, 0.4); /* Warna dasar gelap transparan */
-    backdrop-filter: blur(15px); /* Efek blur kaca */
+    background-color: rgba(20, 20, 35, 0.4);
+    backdrop-filter: blur(15px);
     -webkit-backdrop-filter: blur(15px);
     padding: 40px;
     border-radius: 20px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 
-    inset 0 1px 0 rgba(255, 255, 255, 0.2); /* Efek garis tipis di atas kaca */
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
     width: 100%;
     max-width: 400px;
     text-align: center;
@@ -34,9 +31,7 @@ body {
     transition: all 0.3s ease;
 }
 
-/* =========================================
-   Kontrol Halaman (Show/Hide)
-   ========================================= */
+/* Kontrol Halaman (Show/Hide) */
 .page {
     display: none;
 }
@@ -50,9 +45,7 @@ body {
     display: none !important;
 }
 
-/* =========================================
-   Tipografi
-   ========================================= */
+/* Tipografi */
 h2 {
     color: #ffffff;
     margin-bottom: 5px;
@@ -71,9 +64,7 @@ p {
     margin-bottom: 20px;
 }
 
-/* =========================================
-   Inputs
-   ========================================= */
+/* Inputs */
 .input-container {
     position: relative;
     margin-bottom: 15px;
@@ -93,7 +84,7 @@ p {
 .input-container input {
     width: 100%;
     padding: 12px 15px 12px 45px;
-    background-color: rgba(255, 255, 255, 0.05); /* Sedikit terang agar terlihat ada form */
+    background-color: rgba(255, 255, 255, 0.05); 
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 10px;
     font-size: 1rem;
@@ -133,9 +124,7 @@ p {
     color: #00ffff;
 }
 
-/* =========================================
-   Tombol Utama
-   ========================================= */
+/* Tombol Utama */
 .btn {
     padding: 12px 20px;
     border: none;
@@ -170,9 +159,7 @@ p {
     width: 100%;
 }
 
-/* =========================================
-   Sosial Login
-   ========================================= */
+/* Sosial Login */
 .social-login-separator {
     margin: 25px 0 15px 0;
     font-size: 0.8rem;
@@ -218,9 +205,7 @@ p {
     transform: translateY(-2px);
 }
 
-/* =========================================
-   Footer & Teks Welcome
-   ========================================= */
+/* Footer & Teks Welcome */
 .switch-page {
     color: #94a3b8;
     margin-bottom: 0;
