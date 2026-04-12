@@ -1,0 +1,255 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    /* MENGGUNAKAN RELATIVE PATH (naik satu folder, lalu masuk ke folder img) */
+    background: url('awan.jpg') no-repeat center center fixed; 
+    background-size: cover;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    color: #f4f7f6;
+    overflow: hidden;
+}
+/* =========================================
+   Container Glassmorphism (Kotak Kaca)
+   ========================================= */
+.container {
+    background-color: rgba(20, 20, 35, 0.4); /* Warna dasar gelap transparan */
+    backdrop-filter: blur(15px); /* Efek blur kaca */
+    -webkit-backdrop-filter: blur(15px);
+    padding: 40px;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 
+    inset 0 1px 0 rgba(255, 255, 255, 0.2); /* Efek garis tipis di atas kaca */
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+/* =========================================
+   Kontrol Halaman (Show/Hide)
+   ========================================= */
+.page {
+    display: none;
+}
+
+.page.active {
+    display: block;
+    animation: fadeIn 0.4s ease;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* =========================================
+   Tipografi
+   ========================================= */
+h2 {
+    color: #ffffff;
+    margin-bottom: 5px;
+    font-size: 1.5rem;
+}
+
+p {
+    color: #cbd5e1;
+    margin-bottom: 25px;
+    font-size: 0.9rem;
+}
+
+.form-icon {
+    font-size: 3rem;
+    color: #00ffff;
+    margin-bottom: 20px;
+}
+
+/* =========================================
+   Inputs
+   ========================================= */
+.input-container {
+    position: relative;
+    margin-bottom: 15px;
+    text-align: left;
+}
+
+.input-container i {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    font-size: 1rem;
+    pointer-events: none;
+}
+
+.input-container input {
+    width: 100%;
+    padding: 12px 15px 12px 45px;
+    background-color: rgba(255, 255, 255, 0.05); /* Sedikit terang agar terlihat ada form */
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    font-size: 1rem;
+    color: #ffffff;
+    outline: none;
+    transition: all 0.2s;
+}
+
+.input-container input::placeholder {
+    color: #94a3b8;
+}
+
+.input-container input:focus {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: #00ffff;
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+}
+
+.password-container .icon-show-password {
+    left: auto;
+    right: 15px;
+    cursor: pointer;
+    color: #94a3b8;
+    pointer-events: auto;
+}
+
+.forgot-password {
+    text-align: right;
+    font-size: 0.8rem;
+    color: #94a3b8;
+    margin-bottom: 25px;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.forgot-password:hover {
+    color: #00ffff;
+}
+
+/* =========================================
+   Tombol Utama
+   ========================================= */
+.btn {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 1rem;
+    transition: all 0.2s;
+}
+
+.btn.primary {
+    background-color: #ffffff;
+    color: #1e293b;
+}
+
+.btn.primary:hover {
+    background-color: #e2e8f0;
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
+}
+
+.btn.danger {
+    background-color: #ef4444;
+    color: white;
+}
+
+.btn.danger:hover {
+    background-color: #dc2626;
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+}
+
+.full-width {
+    width: 100%;
+}
+
+/* =========================================
+   Sosial Login
+   ========================================= */
+.social-login-separator {
+    margin: 25px 0 15px 0;
+    font-size: 0.8rem;
+    color: #94a3b8;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.social-login-separator::before,
+.social-login-separator::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background-color: rgba(255, 255, 255, 0.2);
+    margin: 0 10px;
+}
+
+.social-login-container {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.btn.social {
+    width: 45px;
+    height: 45px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    color: #ffffff;
+    font-size: 1.2rem;
+}
+
+.btn.social:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+}
+
+/* =========================================
+   Footer & Teks Welcome
+   ========================================= */
+.switch-page {
+    color: #94a3b8;
+    margin-bottom: 0;
+}
+
+.switch-page span {
+    color: #00ffff;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.switch-page span:hover {
+    text-decoration: underline;
+}
+
+.welcome-text {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #00ffff;
+    margin-bottom: 10px;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+    display: none;
+}

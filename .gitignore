@@ -1,0 +1,19 @@
+# 1. Kredensial & Secrets
+.env
+
+# 2. Dependency Modules
+# (Tidak perlu di-push karena bisa di-generate ulang dengan npm install)
+node_modules/
+backend/node_modules/
+
+# 3. Log Files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 4. OS Generated Files
+.DS_Store
+Thumbs.db
+
+# 5. Database Data (Jika suatu saat kamu me-mount folder lokal untuk MySQL)
+mysql-data/
