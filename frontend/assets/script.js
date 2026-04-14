@@ -71,10 +71,13 @@ if (welcomeMessage) {
 }
 
 // 4. Fungsi Logout
-function logout() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('savedUsername');
-    window.location.href = 'login.html';
+const btnLogout = document.getElementById('btn-logout');
+if (btnLogout) {
+    btnLogout.addEventListener('click', function() {
+        localStorage.removeItem('token');
+        localStorage.removeItem('savedUsername');
+        window.location.href = 'login.html';
+    });
 }
 
 // 5. Logika untuk Toggle Show/Hide Password

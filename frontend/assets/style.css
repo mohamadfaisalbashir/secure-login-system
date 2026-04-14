@@ -211,14 +211,14 @@ p {
     margin-bottom: 0;
 }
 
-.switch-page span {
+.switch-page a {
     color: #00ffff;
     font-weight: 600;
     cursor: pointer;
     text-decoration: none;
 }
 
-.switch-page span:hover {
+.switch-page a:hover {
     text-decoration: underline;
 }
 
