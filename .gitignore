@@ -1,15 +1,25 @@
 # Dependency
 node_modules/
+dist/
+build/
 
 # Security (SSL Certificates)
 backend/key.pem
 backend/cert.pem
 
 # Environment Variables
+*.env
 .env
+.env.local
 
-# Database initialization (jika mengandung data sensitif)
-backend/init.sql
+# Database Data (Docker volumes)
+db_data/
+
+# Log Files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
 
 # OS Metadata
 .DS_Store

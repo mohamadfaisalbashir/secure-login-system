@@ -14,14 +14,12 @@ services:
       - db_data:/var/lib/mysql
       - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
-      - app-network
+      - internal-network
 
   web:
     build: ./backend
     container_name: web_faisal
     restart: always
-    ports:
-      - "8080:8080"
     environment:
       - DB_HOST=db
       - DB_USER=${DB_USER}
@@ -33,11 +31,33 @@ services:
     depends_on:
       - db
     networks:
-      - app-network
+      - internal-network
+
+  snort:
+    build: ./snort
+    container_name: snort_faisal
+    privileged: true # Diperlukan untuk manipulasi iptables (ACL) dan routing
+    cap_add:
+      - NET_ADMIN
+    ports:
+      - "8080:8080" # Buka port di Snort, yang akan di-forward ke Web
+    networks:
+      - dmz-network
+      - internal-network
+
+  user:
+    image: alpine:latest
+    container_name: user_faisal
+    command: sh -c "apk add --no-cache curl iputils && tail -f /dev/null"
+    networks:
+      - dmz-network
 
 volumes:
   db_data:
 
 networks:
-  app-network:
+  dmz-network:
     driver: bridge
+  internal-network:
+    driver: bridge
+    internal: true # Mengisolasi web & db agar tidak terekspos langsung ke luar
