@@ -36,11 +36,11 @@ services:
   snort:
     build: ./snort
     container_name: snort_faisal
-    privileged: true # Diperlukan untuk manipulasi iptables (ACL) dan routing
+    privileged: true 
     cap_add:
       - NET_ADMIN
     ports:
-      - "8080:8080" # Buka port di Snort, yang akan di-forward ke Web
+      - "8080:8080" 
     networks:
       - dmz-network
       - internal-network
@@ -60,4 +60,4 @@ networks:
     driver: bridge
   internal-network:
     driver: bridge
-    internal: true # Mengisolasi web & db agar tidak terekspos langsung ke luar
+    internal: true 

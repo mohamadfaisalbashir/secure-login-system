@@ -1,6 +1,21 @@
-# Deteksi ICMP Flood (Ping of Death / DoS)
-# Jika ada lebih dari 20 ping dalam 10 detik dari IP yang sama, bunyikan alert.
-alert icmp any any -> $HOME_NET any (msg:"[RULE LOKAL] Terdeteksi ICMP Flood - Potensi DoS!"; itype:8; detection_filter:track by_src, count 20, seconds 10; sid:1000001; rev:1;)
+# 1. DETEKSI ANOMALI KONEKSI & DoS (Potensi Brute Force)
+alert icmp any any -> any any (msg:"[TEST] 1 Paket Ping Lewat!"; itype:8; sid:1000004; rev:1;)
+drop icmp any any -> any any (msg:"[RULE LOKAL] Terdeteksi ICMP Flood - Potensi DoS!"; itype:8; detection_filter:track by_src, count 20, seconds 10; sid:1000001; rev:1;)
+# Backend membatasi login 3x per menit. Snort akan deteksi jika ada >4 koneksi TCP SYN ke port 8080 dalam 60 detik.
+drop tcp any any -> any 8080 (msg:"[RULE LOKAL] Lonjakan TCP SYN - Potensi Brute Force HTTPS!"; flags:S; detection_filter:track by_src, count 4, seconds 60; sid:1000005; rev:2;)
 
-# Deteksi akses ke endpoint register yang mencurigakan (Contoh tambahan)
-alert tcp any any -> $HOME_NET 8080 (msg:"[RULE LOKAL] Percobaan akses API Register"; content:"POST"; content:"/api/register"; sid:1000002; rev:1;)
+# 2. DETEKSI SQL INJECTION (Mendeteksi karakter yang diblokir oleh regex backend)
+drop tcp any any -> any 8080 (msg:"[RULE LOKAL] Terdeteksi Potensi SQL Injection (OR 1=1)!"; pcre:"/OR\s+1\s*=\s*1/i"; sid:1000012; rev:3;)
+drop tcp any any -> any 8080 (msg:"[RULE LOKAL] Terdeteksi Potensi SQL Injection (UNION SELECT)!"; content:"UNION"; nocase; content:"SELECT"; nocase; within:20; sid:1000008; rev:5;)
+drop tcp any any -> any 8080 (msg:"[RULE LOKAL] Terdeteksi Potensi SQL Injection (DROP TABLE)!"; content:"DROP"; nocase; content:"TABLE"; nocase; within:10; sid:1000016; rev:2;)
+drop tcp any any -> any 8080 (msg:"[RULE LOKAL] Terdeteksi Potensi SQL Injection (Komentar SQL -- di body)!"; content:"username="; content:"--"; within:100; sid:1000013; rev:3;)
+
+# 3. DETEKSI CROSS-SITE SCRIPTING (XSS)
+drop tcp any any -> any 8080 (msg:"[RULE LOKAL] Terdeteksi Potensi XSS (Script Tag)!"; flow:to_server,established; content:"<script"; nocase; sid:1000009; rev:4;)
+drop tcp any any -> any 8080 (msg:"[RULE LOKAL] Terdeteksi Potensi XSS (On Event)!"; flow:to_server,established; pcre:"/on(error|load|click|mouseover)\s*=/i"; sid:1000014; rev:2;)
+drop tcp any any -> any 8080 (msg:"[RULE LOKAL] Terdeteksi Potensi XSS (javascript uri)!"; flow:to_server,established; content:"javascript:"; nocase; sid:1000015; rev:2;)
+
+# 4. DETEKSI BUFFER OVERFLOW
+# Backend membatasi payload 10kb, namun TCP memecah paket (Segmentasi) berdasarkan MTU (maks ~1460 bytes/paket).
+# Kita atur Snort mendeteksi paket tunggal dengan payload > 800 bytes sebagai anomali (karena normalnya payload login sangat kecil).
+drop tcp any any -> any 8080 (msg:"[RULE LOKAL] Anomali Payload Besar - Potensi Buffer Overflow!"; dsize:>800; sid:1000011; rev:3;)

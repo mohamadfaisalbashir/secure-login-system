@@ -6,7 +6,9 @@ const cors = require('cors');
 const path = require('path');
 const helmet = require('helmet');
 const https = require('https');
+const rateLimit = require('express-rate-limit');
 const fs = require('fs');
+const crypto = require('crypto');
 require('dotenv').config();
 
 const app = express();
@@ -36,7 +38,7 @@ const pool = mysql.createPool({
     queueLimit: 0
 });
 
-// Middleware Validasi Input (Lapis Pertahanan Tambahan XSS & Buffer Overflow)
+// Middleware Validasi Input
 const validateInput = (req, res, next) => {
     const { username, password } = req.body;
     
@@ -67,6 +69,7 @@ app.post('/api/register', validateInput, async (req, res) => {
         );
         res.status(201).json({ message: 'Registrasi berhasil' });
     } catch (error) {
+        console.error("[ERROR REGISTRASI]:", error);
         if (error.code === 'ER_DUP_ENTRY') {
             res.status(409).json({ error: 'Username sudah terdaftar' });
         } else {
@@ -75,8 +78,17 @@ app.post('/api/register', validateInput, async (req, res) => {
     }
 });
 
+// Brute Force Protection
+const loginLimiter = rateLimit({
+    windowMs: 1 * 60 * 1000,
+    max: 3, 
+    message: { error: 'Terlalu banyak percobaan login, IP Anda diblokir sementara selama 1 menit.' },
+    standardHeaders: true, 
+    legacyHeaders: false,
+});
+
 // Login Endpoint
-app.post('/api/login', validateInput, async (req, res) => {
+app.post('/api/login', loginLimiter, validateInput, async (req, res) => {
     const { username, password } = req.body;
     try {
         const [rows] = await pool.execute('SELECT * FROM users WHERE username = ?', [username]);
@@ -96,10 +108,24 @@ app.post('/api/login', validateInput, async (req, res) => {
 // Konfigurasi HTTPS
 const sslOptions = {
     key: fs.readFileSync(path.join(__dirname, 'key.pem')),
-    cert: fs.readFileSync(path.join(__dirname, 'cert.pem'))
+    cert: fs.readFileSync(path.join(__dirname, 'cert.pem')),
+
+    // 1. Mencegah serangan downgrade
+    secureOptions: crypto.constants.SSL_OP_NO_TLSv1 | crypto.constants.SSL_OP_NO_TLSv1_1,
+    
+    // 2. Cipher Suites (Forward Secrecy)
+    ciphers: [
+        'ECDHE-RSA-AES256-GCM-SHA384',
+        'ECDHE-ECDSA-AES256-GCM-SHA384',
+        'ECDHE-RSA-AES128-GCM-SHA256',
+        'ECDHE-ECDSA-AES128-GCM-SHA256',
+        'DHE-RSA-AES256-GCM-SHA384',
+        'DHE-RSA-AES128-GCM-SHA256'
+    ].join(':'),
+    
+    honorCipherOrder: true
 };
 
-// Start HTTPS Server
 const PORT = process.env.PORT || 8080;
 https.createServer(sslOptions, app).listen(PORT, () => {
     console.log(`Server HTTPS berjalan secara aman di port ${PORT}`);
