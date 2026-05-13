@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   db:
     image: mysql:8.0
@@ -26,10 +24,15 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=${DB_NAME}
       - JWT_SECRET=${JWT_SECRET}
+      - PORT=8080
+      - ENABLE_HTTPS=false
+      - BODY_LIMIT=10kb
     volumes:
       - ./frontend:/usr/src/frontend
     depends_on:
       - db
+    expose:
+      - "8080"
     networks:
       - internal-network
 
@@ -39,8 +42,14 @@ services:
     privileged: true 
     cap_add:
       - NET_ADMIN
+    environment:
+      - WEB_HOST=web_faisal
+      - WEB_PORT=8080
+      - WEB_SCHEME=http
     ports:
       - "8080:8080" 
+    depends_on:
+      - web
     networks:
       - dmz-network
       - internal-network

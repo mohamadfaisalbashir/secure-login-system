@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y \
     tar \
     tzdata \
     libnetfilter-queue1 \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 COPY local.rules /etc/snort/rules/local.rules
 COPY setup.sh /usr/local/bin/setup.sh

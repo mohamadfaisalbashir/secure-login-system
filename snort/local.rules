@@ -1,21 +1,33 @@
-# 1. DETEKSI ANOMALI KONEKSI & DoS (Potensi Brute Force)
-alert icmp any any -> any any (msg:"[TEST] 1 Paket Ping Lewat!"; itype:8; sid:1000004; rev:1;)
-drop icmp any any -> any any (msg:"[RULE LOKAL] Terdeteksi ICMP Flood - Potensi DoS!"; itype:8; detection_filter:track by_src, count 20, seconds 10; sid:1000001; rev:1;)
-# Backend membatasi login 3x per menit. Snort akan deteksi jika ada >4 koneksi TCP SYN ke port 8080 dalam 60 detik.
-drop tcp any any -> any 8080 (msg:"[RULE LOKAL] Lonjakan TCP SYN - Potensi Brute Force HTTPS!"; flags:S; detection_filter:track by_src, count 4, seconds 60; sid:1000005; rev:2;)
+# =====================================================================
+# 1. MONITORING DASAR (Hanya Alert, tidak diblokir karena ini trafik normal)
+# =====================================================================
+alert tcp any any -> any 8080 (msg:"[IDS] Trafik menuju layanan web terdeteksi"; flags:S; sid:1000000; rev:2;)
+alert icmp any any -> any any (msg:"[IDS] Paket ICMP Echo Request terdeteksi"; itype:8; sid:1000004; rev:3;)
 
-# 2. DETEKSI SQL INJECTION (Mendeteksi karakter yang diblokir oleh regex backend)
-drop tcp any any -> any 8080 (msg:"[RULE LOKAL] Terdeteksi Potensi SQL Injection (OR 1=1)!"; pcre:"/OR\s+1\s*=\s*1/i"; sid:1000012; rev:3;)
-drop tcp any any -> any 8080 (msg:"[RULE LOKAL] Terdeteksi Potensi SQL Injection (UNION SELECT)!"; content:"UNION"; nocase; content:"SELECT"; nocase; within:20; sid:1000008; rev:5;)
-drop tcp any any -> any 8080 (msg:"[RULE LOKAL] Terdeteksi Potensi SQL Injection (DROP TABLE)!"; content:"DROP"; nocase; content:"TABLE"; nocase; within:10; sid:1000016; rev:2;)
-drop tcp any any -> any 8080 (msg:"[RULE LOKAL] Terdeteksi Potensi SQL Injection (Komentar SQL -- di body)!"; content:"username="; content:"--"; within:100; sid:1000013; rev:3;)
+# =====================================================================
+# 2. PROTEKSI DoS & BRUTE FORCE (DROP = Blokir senyap + Alert Log)
+# =====================================================================
+# ICMP Flood diblokir secara senyap agar resource server tidak habis membalas
+drop icmp any any -> any any (msg:"[IPS] Terdeteksi ICMP Flood - Potensi DoS diblokir!"; itype:8; detection_filter:track by_src, count 20, seconds 10; sid:1000001; rev:3;)
 
-# 3. DETEKSI CROSS-SITE SCRIPTING (XSS)
-drop tcp any any -> any 8080 (msg:"[RULE LOKAL] Terdeteksi Potensi XSS (Script Tag)!"; flow:to_server,established; content:"<script"; nocase; sid:1000009; rev:4;)
-drop tcp any any -> any 8080 (msg:"[RULE LOKAL] Terdeteksi Potensi XSS (On Event)!"; flow:to_server,established; pcre:"/on(error|load|click|mouseover)\s*=/i"; sid:1000014; rev:2;)
-drop tcp any any -> any 8080 (msg:"[RULE LOKAL] Terdeteksi Potensi XSS (javascript uri)!"; flow:to_server,established; content:"javascript:"; nocase; sid:1000015; rev:2;)
+# Brute Force login diblokir setelah 4x percobaan dalam 1 menit
+drop tcp any any -> any 8080 (msg:"[IPS] Brute Force login HTTP diblokir!"; flow:to_server,established; content:"POST"; depth:4; content:"/login"; distance:0; within:32; detection_filter:track by_src, count 4, seconds 60; sid:1000005; rev:10;)
 
-# 4. DETEKSI BUFFER OVERFLOW
-# Backend membatasi payload 10kb, namun TCP memecah paket (Segmentasi) berdasarkan MTU (maks ~1460 bytes/paket).
-# Kita atur Snort mendeteksi paket tunggal dengan payload > 800 bytes sebagai anomali (karena normalnya payload login sangat kecil).
-drop tcp any any -> any 8080 (msg:"[RULE LOKAL] Anomali Payload Besar - Potensi Buffer Overflow!"; dsize:>800; sid:1000011; rev:3;)
+# =====================================================================
+# 3. PROTEKSI APPLICATION LAYER (REJECT = Blokir paksa + Alert Log + TCP Reset)
+# Menggunakan 'reject' agar penyerang langsung mendapat error "Connection Refused/Reset"
+# =====================================================================
+# SQL Injection
+reject tcp any any -> any 8080 (msg:"[IPS] SQL Injection (OR 1=1) diputus paksa!"; flow:to_server,established; pcre:"/or\s+1\s*=\s*1/i"; sid:1000012; rev:8;)
+reject tcp any any -> any 8080 (msg:"[IPS] SQL Injection (UNION SELECT) diputus paksa!"; flow:to_server,established; pcre:"/union\s+select/i"; sid:1000008; rev:10;)
+reject tcp any any -> any 8080 (msg:"[IPS] SQL Injection (DROP TABLE) diputus paksa!"; flow:to_server,established; pcre:"/drop\s+table/i"; sid:1000016; rev:7;)
+reject tcp any any -> any 8080 (msg:"[IPS] SQL Injection (Komentar SQL) diputus paksa!"; flow:to_server,established; pcre:"/'\s*--|--\s/i"; sid:1000013; rev:8;)
+
+# Cross-Site Scripting (XSS)
+reject tcp any any -> any 8080 (msg:"[IPS] XSS (script tag) diputus paksa!"; flow:to_server,established; content:"<script"; nocase; sid:1000009; rev:9;)
+reject tcp any any -> any 8080 (msg:"[IPS] XSS (encoded script) diputus paksa!"; flow:to_server,established; content:"u003cscript"; nocase; sid:1000021; rev:3;)
+reject tcp any any -> any 8080 (msg:"[IPS] XSS (event handler) diputus paksa!"; flow:to_server,established; pcre:"/on(error|load|click|mouseover)\s*=/i"; sid:1000014; rev:7;)
+reject tcp any any -> any 8080 (msg:"[IPS] XSS (javascript URI) diputus paksa!"; flow:to_server,established; content:"javascript:"; nocase; sid:1000015; rev:7;)
+
+# Buffer Overflow / Payload Raksasa
+reject tcp any any -> any 8080 (msg:"[IPS] Anomali payload besar diputus paksa!"; flow:to_server,established; dsize:>512; sid:1000011; rev:8;)
