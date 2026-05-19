@@ -27,3 +27,6 @@ Thumbs.db
 
 # TXT
 *.txt
+
+# Local Scripts / Testing
+test_ids.sh
