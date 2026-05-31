@@ -17,7 +17,8 @@ services:
       - db_data:/var/lib/mysql
       - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
-      - internal-network
+      internal-network:
+        ipv4_address: 192.168.1.10
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost",
              "-u", "${DB_USER}", "-p${DB_PASSWORD}"]
@@ -50,7 +51,8 @@ services:
     expose:
       - "8080"
     networks:
-      - internal-network
+      internal-network:
+        ipv4_address: 192.168.1.12
     healthcheck:
       test: ["CMD-SHELL",
              "wget -qO- http://localhost:8080/health || exit 1"]
@@ -83,13 +85,16 @@ services:
       - ./backend/key.pem:/etc/snort/ssl/key.pem:ro
       - snort_logs:/var/log/snort
       - ./snort/acl.conf:/etc/snort/acl.conf:ro
-      - ./snort/local.rules:/etc/snort/rules/local.rules:ro
+      - ./snort/snort.conf:/etc/snort/snort.conf:ro
+      - ./snort/rules:/etc/snort/rules:ro
     depends_on:
       web:
         condition: service_healthy
     networks:
-      - dmz-network
-      - internal-network
+      dmz-network:
+        ipv4_address: 192.168.2.100
+      internal-network:
+        ipv4_address: 192.168.1.11
     healthcheck:
       test: ["CMD-SHELL",
              "ss -tlnp | grep -q ':443' && ss -tlnp | grep -q ':80' || exit 1"]
@@ -108,7 +113,8 @@ services:
     container_name: user_faisal
     command: sh -c "apk add --no-cache curl wget iputils jq; cp /tmp/test_ids.sh /test_ids.sh 2>/dev/null; chmod +x /test_ids.sh 2>/dev/null; tail -f /dev/null"
     networks:
-      - dmz-network
+      dmz-network:
+        ipv4_address: 192.168.2.36
     volumes:
       - ./test_ids.sh:/tmp/test_ids.sh:ro
 
@@ -119,7 +125,16 @@ volumes:
 networks:
   dmz-network:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.2.0/24
+          gateway: 192.168.2.1
+
   internal-network:
     driver: bridge
     internal: true
+    ipam:
+      config:
+        - subnet: 192.168.1.0/24
+          gateway: 192.168.1.1
     

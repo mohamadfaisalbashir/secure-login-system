@@ -1,0 +1,48 @@
+# Project community rules for lab traffic visibility and common web attack tests.
+# These rules stay separate from the official community.rules file so updates do not overwrite them.
+# SID range: 2001000-2001999.
+
+# Network traffic visibility
+alert tcp any any -> any any (msg:"[IDS] TCP SYN traffic observed"; flags:S; sid:2001000; rev:1;)
+alert icmp any any -> any any (msg:"[IDS] ICMP echo request observed"; itype:8; sid:2001001; rev:1;)
+alert tcp any any -> any 443 (msg:"[IDS] HTTPS connection attempt"; flags:S; sid:2001002; rev:1;)
+alert tcp any any -> any $HTTP_PORTS (msg:"[IDS] HTTP request observed"; content:"HTTP/1."; nocase; sid:2001003; rev:1;)
+alert tcp any any -> any $HTTP_PORTS (msg:"[IDS] HTTP GET request observed"; content:"GET "; depth:4; sid:2001004; rev:1;)
+alert tcp any any -> any $HTTP_PORTS (msg:"[IDS] HTTP POST request observed"; content:"POST"; depth:4; nocase; sid:2001005; rev:1;)
+alert udp any any -> any 53 (msg:"[IDS] DNS query observed"; content:"|01 00 00 01|"; offset:2; depth:4; sid:2001006; rev:1;)
+
+# Reconnaissance and flooding patterns
+alert tcp any any -> any any (msg:"[IDS] TCP NULL scan detected"; flags:0; sid:2001020; rev:1;)
+alert tcp any any -> any any (msg:"[IDS] TCP FIN scan detected"; flags:F; sid:2001021; rev:1;)
+alert tcp any any -> any any (msg:"[IDS] TCP XMAS scan detected"; flags:FPU; sid:2001022; rev:1;)
+alert tcp any any -> any any (msg:"[IDS] Possible TCP SYN flood"; flags:S; detection_filter:track by_src, count 40, seconds 5; sid:2001023; rev:1;)
+alert icmp any any -> any any (msg:"[IDS] Possible ICMP flood"; itype:8; detection_filter:track by_src, count 20, seconds 10; sid:2001024; rev:1;)
+
+# Common web application attack tests
+alert tcp any any -> any $HTTP_PORTS (msg:"[IDS] SQL injection OR 1=1 attempt"; content:"OR 1=1"; nocase; sid:2001040; rev:3;)
+alert tcp any any -> any $HTTP_PORTS (msg:"[IDS] SQL injection AND 1=1 attempt"; content:"AND 1=1"; nocase; sid:2001045; rev:1;)
+alert tcp any any -> any $HTTP_PORTS (msg:"[IDS] SQL injection UNION SELECT attempt"; content:"UNION SELECT"; nocase; sid:2001041; rev:3;)
+alert tcp any any -> any $HTTP_PORTS (msg:"[IDS] SQL injection DROP TABLE attempt"; content:"DROP TABLE"; nocase; sid:2001042; rev:3;)
+alert tcp any any -> any $HTTP_PORTS (msg:"[IDS] SQL injection SLEEP attempt"; content:"SLEEP("; nocase; sid:2001043; rev:3;)
+alert tcp any any -> any $HTTP_PORTS (msg:"[IDS] SQL injection BENCHMARK attempt"; content:"BENCHMARK("; nocase; sid:2001046; rev:1;)
+alert tcp any any -> any $HTTP_PORTS (msg:"[IDS] SQL metadata enumeration attempt"; content:"information_schema"; nocase; sid:2001044; rev:1;)
+
+alert tcp any any -> any $HTTP_PORTS (msg:"[IDS] XSS script tag attempt"; content:"<script"; nocase; sid:2001060; rev:1;)
+alert tcp any any -> any $HTTP_PORTS (msg:"[IDS] XSS encoded script tag attempt"; content:"%3cscript"; nocase; sid:2001061; rev:1;)
+alert tcp any any -> any $HTTP_PORTS (msg:"[IDS] XSS javascript URI attempt"; content:"javascript:"; nocase; sid:2001062; rev:1;)
+alert tcp any any -> any $HTTP_PORTS (msg:"[IDS] XSS event handler attempt"; pcre:"/on(error|load|click|mouseover|focus)\s*=/i"; sid:2001063; rev:1;)
+
+alert tcp any any -> any $HTTP_PORTS (msg:"[IDS] Buffer anomaly Content-Length besar menuju backend terdeteksi"; content:"Content-Length|3A|"; nocase; pcre:"/Content-Length\s*:\s*(1[2-9][0-9]{2}|[2-9][0-9]{3,})/i"; sid:1000011; rev:31;)
+alert tcp any any -> any $HTTP_PORTS (msg:"[IDS] Buffer fuzzing karakter berulang menuju backend terdeteksi"; pcre:"/A{300,}|B{300,}|C{300,}|1{300,}/i"; sid:1000040; rev:31;)
+
+alert tcp any any -> any $HTTP_PORTS (msg:"[IDS] Brute Force login terdeteksi"; content:"POST"; depth:4; nocase; content:"/api/login"; distance:0; within:100; content:"Content-Length|3A|"; nocase; pcre:"/Content-Length\s*:\s*([1-9][0-9]?|[1-4][0-9]{2})/i"; detection_filter:track by_src, count 5, seconds 60; sid:1000005; rev:18;)
+alert tcp any any -> any $HTTP_PORTS (msg:"[IDS] Brute Force register terdeteksi"; content:"POST"; depth:4; nocase; content:"/api/register"; distance:0; within:120; content:"Content-Length|3A|"; nocase; pcre:"/Content-Length\s*:\s*([1-9][0-9]?|[1-4][0-9]{2})/i"; detection_filter:track by_src, count 8, seconds 60; sid:1000022; rev:8;)
+
+alert tcp any any -> any $HTTP_PORTS (msg:"[IDS] Directory traversal attempt"; content:"../"; sid:2001080; rev:1;)
+alert tcp any any -> any $HTTP_PORTS (msg:"[IDS] Encoded directory traversal attempt"; content:"%2e%2e%2f"; nocase; sid:2001081; rev:1;)
+alert tcp any any -> any $HTTP_PORTS (msg:"[IDS] Unix passwd file probe"; content:"/etc/passwd"; nocase; sid:2001082; rev:1;)
+
+# Application endpoints
+alert tcp any any -> any $HTTP_PORTS (msg:"[IDS] Login endpoint request observed"; content:"/api/login"; nocase; sid:2001160; rev:1;)
+alert tcp any any -> any $HTTP_PORTS (msg:"[IDS] Register endpoint request observed"; content:"/api/register"; nocase; sid:2001161; rev:1;)
+alert tcp any any -> any $HTTP_PORTS (msg:"[IDS] Possible login brute force"; content:"POST"; depth:4; nocase; content:"/api/login"; distance:0; within:120; detection_filter:track by_src, count 5, seconds 60; sid:2001162; rev:1;)

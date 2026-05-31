@@ -170,6 +170,38 @@ add_nfq_rule OUTPUT -p tcp -d "$WEB_IP" --dport "$WEB_PORT"
 # ICMP ke Snort container untuk flood test.
 add_nfq_rule INPUT -p icmp --icmp-type echo-request
 
+# =============================================================================
+# 6.1 Re-apply BLACKLIST/BLOCK_IP agar DROP source menang sebelum NFQUEUE
+# =============================================================================
+# Alasan:
+# ACL dibaca sebelum NFQUEUE. Setelah itu add_nfq_rule memakai iptables -I ... 1,
+# sehingga rule NFQUEUE terdorong ke posisi paling atas. Akibatnya blacklist IP
+# bisa kalah prioritas. Block ini memasang ulang BLACKLIST/BLOCK_IP di posisi 1.
+if [ -f "$ACL_FILE" ]; then
+    log "Re-apply BLACKLIST/BLOCK_IP sebagai prioritas tertinggi..."
+    while IFS= read -r raw; do
+        line="$(printf '%s' "$raw" | tr -d '\r' | sed 's/#.*$//' | sed 's/[[:space:]]*$//')"
+        [ -z "$line" ] && continue
+
+        ACTION="$(echo "$line" | awk '{print $1}')"
+        VALUE="$(echo "$line"  | awk '{print $2}')"
+        [ -z "$ACTION" ] || [ -z "$VALUE" ] && continue
+
+        case "$ACTION" in
+            BLACKLIST|BLOCK_IP)
+                iptables -D INPUT   -s "$VALUE" -j DROP 2>/dev/null || true
+                iptables -D FORWARD -s "$VALUE" -j DROP 2>/dev/null || true
+
+                iptables -I INPUT   1 -s "$VALUE" -j DROP || true
+                iptables -I FORWARD 1 -s "$VALUE" -j DROP || true
+
+                log "  PRIORITY ${ACTION}: ${VALUE} -> DROP sebelum NFQUEUE"
+                ;;
+        esac
+    done < "$ACL_FILE"
+fi
+
+
 log "iptables NFQUEUE summary:"
 iptables -S | grep -E "NFQUEUE|DROP|ACCEPT" || true
 
@@ -180,7 +212,12 @@ log "Validasi konfigurasi Snort..."
 VALIDATION_LOG="/tmp/snort-validation.log"
 
 set +e
-snort -T -c "$SNORT_CONF" -i "${SNORT_IFACE%%:*}" -k none > "$VALIDATION_LOG" 2>&1
+snort -T \
+    -Q \
+    --daq nfq \
+    --daq-var queue="$NFQ_NUM" \
+    -c "$SNORT_CONF" \
+    -k none > "$VALIDATION_LOG" 2>&1
 SNORT_TEST_EXIT=$?
 set -e
 
